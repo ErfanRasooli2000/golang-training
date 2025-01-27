@@ -2,62 +2,52 @@ package domain
 
 import (
 	"database/sql"
-	"errors"
 	_ "github.com/go-sql-driver/mysql"
-	"github.com/jmoiron/sqlx"
-	"github.com/my-org/my-package/errs"
+	"time"
 )
 
-type CustomerRepositoryDb struct {
-	client *sqlx.DB
+type CustomerRepositoryDB struct {
+	client *sql.DB
 }
 
-func (d CustomerRepositoryDb) GetAll(filters map[string]string) ([]Customer, *errs.AppError) {
+func (d CustomerRepositoryDB) FindAll() ([]Customer, error) {
 
-	findAllSql := "SELECT customer_id , name , city , zipcode , date_of_birth , status from customers"
+	findAllSql := "select id , name , city , zipcode , age , status from customers"
 
-	if status, ok := filters["status"]; ok {
+	rows, err := d.client.Query(findAllSql)
 
-		if status == "active" {
-
-			findAllSql += " where status = 1"
-		} else {
-			findAllSql += " where status = 0"
-		}
+	if err != nil {
+		panic(err)
 	}
 
 	customers := make([]Customer, 0)
-	err := d.client.Select(&customers, findAllSql)
 
-	if err != nil {
-		return nil, errs.ServerError(err.Error())
+	for rows.Next() {
+
+		var c Customer
+
+		err := rows.Scan(&c.Id, &c.Name, &c.City, &c.Zipcode, &c.Age, &c.Status)
+
+		if err != nil {
+			panic(err)
+		}
+
+		customers = append(customers, c)
 	}
 
 	return customers, nil
 }
 
-func (d CustomerRepositoryDb) Find(id int) (Customer, *errs.AppError) {
+func NewCustomerRepositoryDb() CustomerRepositoryDB {
+	client, err := sql.Open("mysql", "root:87438743@/banking")
 
-	findQuerySql := `SELECT customer_id , name , city , zipcode , date_of_birth , status from customers where customer_id=?;`
-
-	var c Customer
-
-	err := d.client.Get(&c, findQuerySql, id)
-
-	if err == nil {
-
-		return c, nil
-
-	} else if errors.Is(err, sql.ErrNoRows) {
-
-		return c, errs.NotFoundHttpError("Not Found")
-
-	} else {
-
-		return c, errs.ServerError(err.Error())
+	if err != nil {
+		panic(err)
 	}
-}
 
-func NewCustomerRepositoryDb(dbClient *sqlx.DB) CustomerRepositoryDb {
-	return CustomerRepositoryDb{client: dbClient}
+	client.SetConnMaxLifetime(time.Minute * 3)
+	client.SetMaxOpenConns(10)
+	client.SetConnMaxIdleTime(10)
+
+	return CustomerRepositoryDB{client: client}
 }
