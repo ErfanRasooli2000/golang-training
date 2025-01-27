@@ -2,8 +2,11 @@ package app
 
 import (
 	"encoding/json"
+	"fmt"
+	"github.com/gorilla/mux"
 	"github.com/my-org/my-package/service"
 	"net/http"
+	"strconv"
 )
 
 type Customer struct {
@@ -24,5 +27,24 @@ func (ch *CustomerHandlers) getAllCustomers(writer http.ResponseWriter, request 
 	customers, _ := ch.service.GetAllCustomers()
 
 	json.NewEncoder(writer).Encode(customers)
+
+}
+func (ch *CustomerHandlers) getCustomerById(writer http.ResponseWriter, request *http.Request) {
+
+	vars := mux.Vars(request)
+
+	id, _ := strconv.Atoi(vars["id"])
+
+	customer, err := ch.service.GetById(id)
+
+	if err != nil {
+
+		writer.WriteHeader(http.StatusNotFound)
+		fmt.Fprintf(writer, err.Error())
+
+	} else {
+		writer.Header().Add("Content-Type", "Application/json")
+		json.NewEncoder(writer).Encode(customer)
+	}
 
 }

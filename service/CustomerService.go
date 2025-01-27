@@ -4,6 +4,7 @@ import "github.com/my-org/my-package/domain"
 
 type CustomerService interface {
 	GetAllCustomers() ([]domain.Customer, error)
+	GetById(int) (*domain.Customer, error)
 }
 
 type DefaultCustomerService struct {
@@ -12,6 +13,10 @@ type DefaultCustomerService struct {
 
 func (s DefaultCustomerService) GetAllCustomers() ([]domain.Customer, error) {
 	return s.repo.FindAll()
+}
+
+func (s DefaultCustomerService) GetById(id int) (*domain.Customer, error) {
+	return s.repo.FindById(id)
 }
 
 func NewCustomerService(repo domain.CustomerRepository) DefaultCustomerService {
