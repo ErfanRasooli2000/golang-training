@@ -12,9 +12,20 @@ type CustomerRepositoryDB struct {
 	client *sql.DB
 }
 
-func (d CustomerRepositoryDB) FindAll() ([]Customer, *errs.AppError) {
+func (d CustomerRepositoryDB) FindAll(filters map[string]string) ([]Customer, *errs.AppError) {
 
-	findAllSql := "select id , name , city , zipcode , age , status from customers"
+	findAllSql := "select id , name , city , zipcode , age , status from customers "
+
+	var extras string
+
+	switch filters["status"] {
+	case "active":
+		extras = extras + " where status = 1"
+	case "inactive":
+		extras = extras + " where status = 0"
+	}
+
+	findAllSql += extras
 
 	rows, err := d.client.Query(findAllSql)
 
