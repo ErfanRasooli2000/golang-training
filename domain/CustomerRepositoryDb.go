@@ -19,7 +19,7 @@ func (d CustomerRepositoryDB) FindAll() ([]Customer, *errs.AppError) {
 	rows, err := d.client.Query(findAllSql)
 
 	if err != nil {
-		panic(err)
+		return nil, errs.NewUnexpectedError(err.Error())
 	}
 
 	customers := make([]Customer, 0)
