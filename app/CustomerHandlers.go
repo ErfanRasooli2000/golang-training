@@ -2,7 +2,6 @@ package app
 
 import (
 	"encoding/json"
-	"fmt"
 	"github.com/gorilla/mux"
 	"github.com/my-org/my-package/service"
 	"net/http"
@@ -26,6 +25,7 @@ func (ch *CustomerHandlers) getAllCustomers(writer http.ResponseWriter, request 
 
 	customers, _ := ch.service.GetAllCustomers()
 
+	writer.Header().Add("Content-Type", "Application/json")
 	json.NewEncoder(writer).Encode(customers)
 
 }
@@ -38,13 +38,17 @@ func (ch *CustomerHandlers) getCustomerById(writer http.ResponseWriter, request 
 	customer, err := ch.service.GetById(id)
 
 	if err != nil {
-
-		writer.WriteHeader(http.StatusNotFound)
-		fmt.Fprintf(writer, err.Error())
-
+		writeResponse(writer, err.Code, err.AsMessage())
 	} else {
-		writer.Header().Add("Content-Type", "Application/json")
-		json.NewEncoder(writer).Encode(customer)
+		writeResponse(writer, http.StatusOK, customer)
 	}
+
+}
+
+func writeResponse(writer http.ResponseWriter, code int, data interface{}) {
+
+	writer.Header().Add("Content-Type", "Application/json")
+	writer.WriteHeader(code)
+	json.NewEncoder(writer).Encode(data)
 
 }

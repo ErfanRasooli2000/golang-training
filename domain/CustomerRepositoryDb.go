@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"errors"
 	_ "github.com/go-sql-driver/mysql"
+	"github.com/my-org/my-package/errs"
 	"time"
 )
 
@@ -11,7 +12,7 @@ type CustomerRepositoryDB struct {
 	client *sql.DB
 }
 
-func (d CustomerRepositoryDB) FindAll() ([]Customer, error) {
+func (d CustomerRepositoryDB) FindAll() ([]Customer, *errs.AppError) {
 
 	findAllSql := "select id , name , city , zipcode , age , status from customers"
 
@@ -30,7 +31,7 @@ func (d CustomerRepositoryDB) FindAll() ([]Customer, error) {
 		err := rows.Scan(&c.Id, &c.Name, &c.City, &c.Zipcode, &c.Age, &c.Status)
 
 		if err != nil {
-			panic(err)
+			return nil, errs.NewUnexpectedError(err.Error())
 		}
 
 		customers = append(customers, c)
@@ -39,7 +40,7 @@ func (d CustomerRepositoryDB) FindAll() ([]Customer, error) {
 	return customers, nil
 }
 
-func (d CustomerRepositoryDB) FindById(id int) (*Customer, error) {
+func (d CustomerRepositoryDB) FindById(id int) (*Customer, *errs.AppError) {
 
 	customerSql := "select id , name , city , zipcode , age , status from customers where id = ?"
 
@@ -50,10 +51,10 @@ func (d CustomerRepositoryDB) FindById(id int) (*Customer, error) {
 	err := row.Scan(&c.Id, &c.Name, &c.City, &c.Zipcode, &c.Age, &c.Status)
 
 	if err != nil {
-		if err == sql.ErrNoRows {
-			return nil, errors.New("Customer Not Found")
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, errs.NewNotFoundError("Customer Not Found")
 		} else {
-			return nil, errors.New("Unexpected Database Error")
+			return nil, errs.NewUnexpectedError("unexpected Database Error")
 		}
 	}
 
@@ -61,7 +62,7 @@ func (d CustomerRepositoryDB) FindById(id int) (*Customer, error) {
 }
 
 func NewCustomerRepositoryDb() CustomerRepositoryDB {
-	client, err := sql.Open("mysql", "rosot:87438743@/banking")
+	client, err := sql.Open("mysql", "root:87438743@/banking")
 
 	if err != nil {
 		panic(err)

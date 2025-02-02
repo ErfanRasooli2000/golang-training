@@ -1,5 +1,7 @@
 package domain
 
+import "github.com/my-org/my-package/errs"
+
 type Customer struct {
 	Id      int
 	Name    string
@@ -10,6 +12,6 @@ type Customer struct {
 }
 
 type CustomerRepository interface {
-	FindAll() ([]Customer, error)
-	FindById(int) (*Customer, error)
+	FindAll() ([]Customer, *errs.AppError)
+	FindById(int) (*Customer, *errs.AppError)
 }
